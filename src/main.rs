@@ -1,35 +1,40 @@
-use anyhow::Result;
-use mistralrs::{
-    GgufModelBuilder, PagedAttentionMetaBuilder, RequestBuilder, TextMessageRole, TextMessages,
-};
-use std::path::Path;
+mod prompt;
+use crate::prompt::prompt;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+use rusqlite::{Connection, Result};
 
-    let model = GgufModelBuilder::new(
-        "llama-2-7b.Q8_0", 
-        vec![
-            "./llama-2-7b.Q8_0.gguf",
-            "./chat_template.json",
-        ]
-    )
-    .with_chat_template(Path::new("./chat_template.json").display().to_string())
-    .with_logging()
-    .with_paged_attn(|| PagedAttentionMetaBuilder::default().build())?
-    .build()
-    .await?;
+//#[derive(Debug)]
+struct Toezegging {
+    tekst: String,
+    datum: String,
+}
 
-    let messages = TextMessages::new()
-        .add_message(
-            TextMessageRole::System,
-            "You are an AI agent with a specialty in personal knowledge management",
-        )
-        .add_message(TextMessageRole::User, "please create a template for my daily note");
+fn retrieve_toezeggingen(conn: Connection) -> Vec<Toezegging> {
+    let mut stmt = conn.prepare(
+        "SELECT tekst, datum FROM Toezegging  ORDER BY datum DESC"
+    ).expect("err");
 
-    let response = model.send_chat_request(messages).await?;
+    let toezegging_iter = stmt.query_map([], |row| {
+        Ok(Toezegging {
+            tekst: row.get(0)?,
+            datum: row.get(1)?,
+        })
+    }).expect("error");
 
-    println!("{}", response.choices[0].message.content.as_ref().unwrap());
+    let mut result = Vec::new();
+    for toezegging in toezegging_iter.take(7) {
+        let tz = toezegging.unwrap();
+        println!("toezegging {}: {}", tz.datum, tz.tekst);
+        result.push(tz);
+    }
+    result
+}
+
+fn main() -> Result<()> {
+    let conn = Connection::open("/Users/peter/tkconv-data/tk.sqlite3")?;
+
+    let toezeggingen = retrieve_toezeggingen(conn);
+    prompt(toezeggingen);
 
     Ok(())
 }
