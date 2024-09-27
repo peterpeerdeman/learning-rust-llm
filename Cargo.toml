@@ -1,0 +1,9 @@
+[package]
+name = "rust-llm-bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+llm-chain = "0.13.0"
+llm-chain-llama = "0.13.0"
+tokio = { version = "1.40.0", features = ["full"] }
