@@ -1,13 +1,10 @@
 mod prompt;
-use crate::prompt::prompt;
+mod toezegging;
+
+use crate::prompt::*;
+use crate::toezegging::Toezegging;
 
 use rusqlite::{Connection, Result};
-
-//#[derive(Debug)]
-struct Toezegging {
-    tekst: String,
-    datum: String,
-}
 
 fn retrieve_toezeggingen(conn: Connection) -> Vec<Toezegging> {
     let mut stmt = conn.prepare(
@@ -30,11 +27,15 @@ fn retrieve_toezeggingen(conn: Connection) -> Vec<Toezegging> {
     result
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let conn = Connection::open("/Users/peter/tkconv-data/tk.sqlite3")?;
 
     let toezeggingen = retrieve_toezeggingen(conn);
-    prompt(toezeggingen);
+    let prompt = build_prompt(toezeggingen);
+
+    let res = print_completions(prompt).await;
+    dbg!(res.unwrap());
 
     Ok(())
 }

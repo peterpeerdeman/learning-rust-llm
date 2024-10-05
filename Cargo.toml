@@ -5,5 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.89"
+genai = "0.1.9"
 llama_cpp = { version = "0.3.2", features = ["metal"] }
 rusqlite = "0.32.1"
+tokio = { version="1.40.0", features=["full"] }
